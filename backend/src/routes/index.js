@@ -12,9 +12,9 @@ router.get('/test', async function(req, res, next) {
 });
 
 router.get('/test/download', async function(req, res, next) {
-  let file = await fs.readFileSync("./src/TestFiles/gek.txt");
+  let file = await fs.readFileSync("./src/TestFiles/gek.json");
   res.setHeader("Content-Type", "text/plain");
-  res.setHeader("Content-Disposition", "attachment;filename=gek.txt");
+  res.setHeader("Content-Disposition", "attachment;filename=gek.json");
   res.status(200).write(file.toString());
   return res.end();
 });
