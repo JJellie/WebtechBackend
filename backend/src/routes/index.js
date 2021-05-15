@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var Papa = require('papaparse')
 
 const fs = require("fs");
 
@@ -18,5 +19,32 @@ router.get('/test/download', async function(req, res, next) {
   res.status(200).write(file.toString());
   return res.end();
 });
+router.get('/test/download/csv.json', async function(req, res, next) {
+        const csvFilePath = './src/TestFiles/test.csv'
+
+    // Function to read csv which returns a promise so you can do async / await.
+
+    const readCSV = async (filePath) => {
+    const csvFile = fs.readFileSync(filePath)
+    const csvData = csvFile.toString()  
+    return new Promise(resolve => {
+        Papa.parse(csvData, {
+        header: true,
+        complete: results => {
+            console.log('Complete', results.data.length, 'records.'); 
+            resolve(results.data);
+        }
+        });
+    });
+    };
+    const test = async () => {
+    let parsedData = await readCSV(csvFilePath);
+    res.json(parsedData);
+    return res.end();
+    }
+    test()
+    
+
+  });
 
 module.exports = router;
