@@ -20,7 +20,7 @@ router.get('/test/download', async function(req, res, next) {
   return res.end();
 });
 router.get('/test/download/csv.json', async function(req, res, next) {
-        const csvFilePath = './src/TestFiles/test.csv'
+        const csvFilePath = './src/TestFiles/enron-v1.csv'
 
     // Function to read csv which returns a promise so you can do async / await.
 
@@ -39,7 +39,25 @@ router.get('/test/download/csv.json', async function(req, res, next) {
     };
     const test = async () => {
     let parsedData = await readCSV(csvFilePath);
-    res.json(parsedData);
+    let returnData = [];
+    for(let i = 0; i < parsedData.length; i++) {
+        idAndMail = {"fromId" : parsedData[i].fromId,"fromEmail":parsedData[i].fromEmail, "toId":parsedData[i].toId, "toEmail":parsedData[i].toEmail}
+        row = [idAndMail, 1]
+    let control = false;
+    for(let j = 0; j < returnData.length; j++) {
+        if(returnData[j][0].fromId === idAndMail.fromId & returnData[j][0].toId === idAndMail.toId) {
+            let num = returnData[j][1]
+            returnData[j][1] = num+1
+            control = true
+            break;
+        } 
+    }
+    if(!control) {
+        returnData.push(row)
+    }
+    }
+    console.log(returnData.length)
+    res.json(returnData);
     return res.end();
     }
     test()
