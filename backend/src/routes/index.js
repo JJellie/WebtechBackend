@@ -23,7 +23,9 @@ router.get('/test/download', async function(req, res, next) {
 
 
 router.get('/test/download/csv.json', async function(req, res, next) {
-    const csvFilePath = './src/TestFiles/enron-v1.csv'
+
+    let reqFilename = req.query.file;
+    const csvFilePath = './src/TestFiles/' + reqFilename;
 
     // Function to read csv which returns a promise so you can do async / await.
 
@@ -104,6 +106,10 @@ router.get(`/test/download/am.json`, async (req, res) => {
     res.json({ nodeHash: people, nodeOrdering, edges });
     return res.end();
 });
+
+
+
+
 
 
 
