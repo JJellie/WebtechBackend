@@ -73,10 +73,18 @@ router.get('/test/download/csv.json', async function(req, res, next) {
 
 });
 
+function getNameFromEmail(email) {
+    let nameParts = email.split("@")[0].split(".");
+    let firstName = nameParts[0];
+    let lastName = nameParts[nameParts.length-1] || "";
+    return { firstName, lastName };
+}
 
 router.get(`/test/download/am.json`, async (req, res) => {
     
-    const csvFilePath = './src/TestFiles/enron-v1.csv'
+    let reqFilename = req.query.file;
+    const csvFilePath = './src/TestFiles/' + reqFilename;
+
     let rawData = (await fs.readFileSync(csvFilePath)).toString();
 
     let dataLines = rawData.replace(/\r/g, "").split("\n");
@@ -88,8 +96,8 @@ router.get(`/test/download/am.json`, async (req, res) => {
     for(var mail of dataLines) {
         mail = mail.split(",");
 
-        let from = {id: mail[1], email: mail[2], jobTitle: mail[3]};
-        let to = {id: mail[4], email: mail[5], jobTitle: mail[6]};
+        let from = { id: mail[1], email: mail[2], jobTitle: mail[3], ...getNameFromEmail(mail[2]) };
+        let to = { id: mail[4], email: mail[5], jobTitle: mail[6], ...getNameFromEmail(mail[5]) };
 
         if(!people[from.id]) people[from.id] = from;
         if(!people[to.id]) people[to.id] = to;
@@ -104,6 +112,7 @@ router.get(`/test/download/am.json`, async (req, res) => {
     }
 
     res.json({ nodeHash: people, nodeOrdering, edges });
+    res.status(200);
     return res.end();
 });
 
