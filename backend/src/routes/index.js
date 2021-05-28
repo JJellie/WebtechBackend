@@ -73,10 +73,14 @@ router.get('/test/download/csv.json', async function(req, res, next) {
 
 });
 
+function titleCase(str) {
+    return str[0].toUpperCase() + str.substring(1);
+}
+
 function getNameFromEmail(email) {
     let nameParts = email.split("@")[0].split(".");
-    let firstName = nameParts[0];
-    let lastName = nameParts[nameParts.length-1] || "";
+    let firstName = titleCase(nameParts[0]);
+    let lastName = titleCase(nameParts[nameParts.length-1]) || "";
     return { firstName, lastName };
 }
 
