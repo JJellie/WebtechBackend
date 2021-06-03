@@ -47,7 +47,7 @@ router.get('/test/download/csv.json', async function(req, res, next) {
         let parsedData = await readCSV(csvFilePath);
         let returnData = [];
         for(let i = 0; i < parsedData.length; i++) {
-            idAndMail = {"fromId" : parsedData[i].fromId,"fromEmail":parsedData[i].fromEmail, "toId":parsedData[i].toId, "toEmail":parsedData[i].toEmail}
+            idAndMail = {"fromId" : parsedData[i].fromId,"fromEmail":parsedData[i].fromEmail, "toId":parsedData[i].toId, "toEmail":parsedData[i].toEmail, 'fromJob':parsedData[i].fromJobtitle, 'toJob': parsedData[i].toJobtitle}
             row = [idAndMail, 1]
             let control = false;
             for(let j = 0; j < returnData.length; j++) {
