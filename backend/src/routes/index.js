@@ -24,6 +24,31 @@ router.get('/test/download', async function(req, res, next) {
 
 
 
+router.get("/download/columns", async (req, res) => {
+
+    let reqFile = req.query.file;
+    let filePath = "./src/TestFiles/" + reqFile;
+
+    // Try to read the file data
+    let fileData;
+    try {
+        fileData = fs.readFileSync(filePath).toString();
+    } catch(e) {
+        res.status(404).json({ error: "Requested file was not found on the server." });
+        return res.end();
+    }
+
+    // Check if there are columns present
+    let columns = fileData.split("\n")[0].split(",");
+    if(columns.length < 2) {
+        res.status(400).json({ error: "No columns were specified in the csv-file. "});
+        return res.end()
+    }
+
+    // Send an array containing the column names
+    res.status(200).json({ columns });
+    return res.end();
+});
 
 
 
