@@ -39,7 +39,7 @@ router.get("/download/columns", async (req, res) => {
     }
 
     // Check if there are columns present
-    let columns = fileData.split("\n")[0].split(",");
+    let columns = fileData.split("\n")[0].replace(/\r/g, "").split(",");
     if(columns.length < 2) {
         res.status(400).json({ error: "No columns were specified in the csv-file. "});
         return res.end()
