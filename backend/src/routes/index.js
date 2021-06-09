@@ -84,6 +84,26 @@ function getNameFromEmail(email) {
     return { firstName, lastName };
 }
 
+const ranks = {
+    "Unknown": 0,
+    "Employee": 1,
+    "Trader": 1,
+    "Manager": 2,
+    "Managing Director": 2,
+    "In House Lawyer": 3,
+    "Director": 3,
+    "Vice President": 3,
+    "President": 4,
+    "CEO": 5
+};
+
+function getDirection(from, to) {
+    let fromRank = ranks[from.jobTitle];
+    let toRank = ranks[to.jobTitle];
+    if(!fromRank || !toRank || fromRank === toRank) return 0;
+    else return fromRank > toRank ? -1 : 1;
+}
+
 router.get(`/test/download/am.json`, async (req, res) => {
     
     let reqFilename = req.query.file;
@@ -107,7 +127,29 @@ router.get(`/test/download/am.json`, async (req, res) => {
         if(!people[to.id]) people[to.id] = to;
 
         let edgeId = `${from.id}-${to.id}`;
-        if(!edges[edgeId]) edges[edgeId] = 1;
+        if(!edges[edgeId]) edges[edgeId] = { numMails: 0, sentiments: [], direction: getDirection(from, to) };
+        
+        edges[edgeId].numMails++;
+        edges[edgeId].sentiments.push(parseFloat(mail[8]));
+        
+    }
+
+    for(let e in edges) {
+        let edge = edges[e];
+        let avg = edge.sentiments.reduce((a, b) => a + b, 0) / edge.sentiments.length;
+        edge.sentiments = undefined;
+        edge.avgSentiment = avg;
+    }
+
+    let min = 10000;
+    let max = -10000;
+    let maxMails = 0;
+    for(var e in edges) {
+        let edge = edges[e];
+        let avg = edge.avgSentiment;
+        if(avg < min) min = avg;
+        if(avg > max) max = avg;
+        if(edge.numMails > maxMails) maxMails = edge.numMails;
     }
 
     let nodeOrdering = [];
@@ -115,7 +157,7 @@ router.get(`/test/download/am.json`, async (req, res) => {
       nodeOrdering.push(i);
     }
 
-    res.json({ nodeHash: people, nodeOrdering, edges });
+    res.json({ nodeHash: people, nodeOrdering, edges, maxSentiment: max, minSentiment: min, maxMails });
     res.status(200);
     return res.end();
 });
