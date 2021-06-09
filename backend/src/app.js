@@ -26,4 +26,26 @@ app.post("/upload", (req, res) => {
     return res.end();
 });
 
+app.post("/upload/dataset", (req, res) => {
+
+    // Check for file attachment
+    if(!req.files?.file) {
+        res.status(400);
+        res.json({ error: "No file was attached." });
+        return res.end();
+    }
+
+    // Check for correct file type
+    if(!req.files.file.name.endsWith(".csv")) {
+        res.status(415);
+        res.json({ error: "Invalid file type (only csv-files are supported)." });
+        return res.end();
+    }
+
+    // All checks are passed, so download the file and save it server-side
+    req.files.file.mv("./src/TestFiles/" + req.files.file.name);
+    res.status(200);
+    return res.end();
+});
+
 module.exports = app;
