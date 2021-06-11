@@ -39,14 +39,19 @@ router.get("/download/columns", async (req, res) => {
     }
 
     // Check if there are columns present
-    let columns = fileData.split("\n")[0].replace(/\r/g, "").split(",");
+    let dataLines = fileData.split("\r\n");
+    let columns = dataLines[0].split(",");
     if(columns.length < 2) {
-        res.status(400).json({ error: "No columns were specified in the csv-file. "});
+        res.status(400).json({ error: "No columns were specified in the csv-file." });
+        return res.end()
+    }
+    if(!dataLines[1]) {
+        res.status(400).json({ error: "There is no data to display in the csv-file." });
         return res.end()
     }
 
-    // Send an array containing the column names
-    res.status(200).json({ columns });
+    // Send an array containing the column names and an example line from the dataset
+    res.status(200).json([columns, dataLines[1].split(",") ]);
     return res.end();
 });
 
