@@ -5,15 +5,17 @@ var cors = require('cors')
 var indexRouter = require('./routes/index');
 var app = express();
 var fileUpload = require("express-fileupload");
+var bodyParser = require("body-parser");
 
 app.use(cors())
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use('/', indexRouter);
+app.use('/', indexRouter.router);
 app.use('/download', express.static('./src/TestFiles'))
 app.use(fileUpload());
+app.use(bodyParser.json());
 
 app.post("/upload", (req, res) => {
 
@@ -47,5 +49,8 @@ app.post("/upload/dataset", (req, res) => {
     res.status(200);
     return res.end();
 });
+
+// Pass down the app object to the router child
+indexRouter.initApp(app);
 
 module.exports = app;

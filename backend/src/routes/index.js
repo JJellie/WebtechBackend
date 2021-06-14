@@ -3,6 +3,7 @@ var router = express.Router();
 var Papa = require('papaparse')
 
 const fs = require("fs");
+let app;
 
 router.get('/', function(req, res, next) {
     return res.status(200).json({ message: 'Welcome to Express API template' });
@@ -23,6 +24,7 @@ router.get('/test/download', async function(req, res, next) {
 
 
 
+// New backend
 
 router.get("/download/columns", async (req, res) => {
 
@@ -58,9 +60,158 @@ router.get("/download/columns", async (req, res) => {
 
 
 
+let columnConfig = {};
 
 
 
+
+
+// POST requests only work to the parent app, so we call and pass the app from the parent module
+let initApp = (parentApp) => {
+    app = parentApp;
+
+    // Set the column configuration
+    app.post("/upload/columns", (req, res) => {
+
+        let reqFile = req.query.file;
+        columnConfig[reqFile] = req.body;
+    
+        return res.status(200).end();
+    });
+};
+
+
+// Download request for the dataset
+router.get("/download/dataset", (req, res) => {
+
+    let reqFile = req.query.file;
+    let filePath = "./src/TestFiles/" + reqFile;
+
+    // See if the columns has been uploaded yet
+    if(!columnConfig[reqFile]) {
+        res.status(400).json({ error: "This dataset does not have a column configuration set." });
+        return res.end();
+    }
+
+    // Try to read the file data
+    let fileData;
+    try {
+        fileData = fs.readFileSync(filePath).toString();
+    } catch(e) {
+        res.status(404).json({ error: "Requested file was not found on the server." });
+        return res.end();
+    }
+
+
+    // Parse the dataset
+    let config = columnConfig[reqFile];
+
+    // Split the dataset into per-entry lines (and keep the first line as the columns list)
+    let dataLines = fileData.split("\r\n");
+    let columnList = dataLines.shift().split(",");
+    if(dataLines[dataLines.length-1] === "") dataLines.pop();
+
+    let nodes = {};
+    let edges = {};
+
+    // Loop over every entry
+    for(var entryLine of dataLines) {
+        let entry = entryLine.split(",");
+
+        // Id's are defined explicitely
+        let fromId = entry[config.fromId];
+        let toId = entry[config.toId];
+
+        // Parse the node attributes and construct an object
+        let fromAttr = config.fromAttr;
+        let from = { id: fromId, ...addAttr(fromAttr, columnList, entry) };
+        
+        let toAttr = config.toAttr;
+        let to = { id: toId, ...addAttr(toAttr, columnList, entry) };
+
+        // If the from/to node does not exist, add it
+        if(!nodes[from.id]) nodes[from.id] = from;
+        if(!nodes[to.id]) nodes[to.id] = to;
+
+        // Look if the edge has appeared before
+        // If not, create an empty placeholder for the edge
+        let edgeId = `${fromId}-${toId}`;
+        if(!edges[edgeId]) {
+            edges[edgeId] = { count: 0 };
+            for(var idx in config.edgeAttr) {
+                let attrIndex = config.edgeAttr[idx];
+                let attr = columnList[attrIndex];
+                edges[edgeId][attr] = [];
+            }
+        }
+
+        // Add the attributes to the edge object
+        edges[edgeId].count++;
+        for(var idx in config.edgeAttr) {
+            let attrIndex = config.edgeAttr[idx];
+            let attr = columnList[attrIndex];
+            let value = entry[attrIndex];
+            edges[edgeId][attr].push(value);
+        }
+
+    }
+
+    // Create an incremental ordering for the nodes
+    let orderings = { incremental: [null] };
+    for(var i = 1; i < Object.keys(nodes).length; i++) {
+        orderings.incremental.push(i);
+    }
+
+    // Return a 200 OK code and send the dataset to the client
+    res.status(200).json({ nodes, edges, orderings }).end();
+});
+
+// Add attributes to a node
+function addAttr(attrList, columnList, entry) {
+    let list = {};
+    for(var attrIndex in attrList) {
+        let idx = attrList[attrIndex];
+
+        let attr = columnList[idx];
+        let value = entry[idx];
+        list[attr] = value;
+    }
+    return list;
+}
+
+
+
+// {fromId : columnIndex, toId : columnIndex, fromAttr: [columnIndex, columnIndex, ...], toAttr: [columnIndex, columnIndex, ...], edgeAttr : [columnIndex, columnIndex, ...]}
+// For the standard dataset
+// {fromId: 1, fromAttr: [2, 3], toId: 4, toAttr: [5, 6], edgeAttr: [0, 8]}
+
+/*
+Steps for the current backend:
+
+- Upload the dataset
+Dataset is already in TestFiles
+
+- Download the columns from the .csv from backend
+(async () => {
+    console.log(await fetch("http://localhost:3001/download/columns?file=enron-v1.csv", { method: "GET" }));
+})()
+
+- Upload the column configuration to the backend
+var indexes = {fromId: 1, fromAttr: [2, 3], toId: 4, toAttr: [5, 6], edgeAttr: [0, 8]};
+(async () => {
+    console.log(await fetch("http://localhost:3001/upload/columns?file=enron-v1.csv", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(indexes) }));
+})()
+
+- Get the new dataset
+(async () => {
+    console.log(await fetch("http://localhost:3001/download/dataset?file=enron-v1.csv", { method: "GET" }));
+})()
+
+*/
+
+
+
+// Old backend
 
 router.get('/test/download/csv.json', async function(req, res, next) {
 
@@ -209,4 +360,7 @@ router.get(`/test/download/am.json`, async (req, res) => {
 
 
 
-module.exports = router;
+module.exports = {
+    router,
+    initApp
+};
