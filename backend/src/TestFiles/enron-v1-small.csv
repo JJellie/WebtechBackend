@@ -1,0 +1,34 @@
+date,fromId,fromEmail,fromJobtitle,toId,toEmail,toJobtitle,messageType,sentiment
+2000-08-13,1,matthew.lenhart@enron.com,Employee,4,andy.zipper@enron.com,Vice President,CC,0.0136986301369863
+2000-08-13,1,matthew.lenhart@enron.com,Employee,6,j.kaminski@enron.com,Manager,TO,0.0136986301369863
+2001-11-22,2,danny.mccarty@enron.com,Vice President,9,dan.hyvl@enron.com,Employee,TO,0.0
+2000-10-29,3,susan.scott@enron.com,Unknown,1,matthew.lenhart@enron.com,Employee,TO,0.0
+2000-10-11,4,andy.zipper@enron.com,Vice President,2,mark.e.taylor@enron.com,Employee,TO,0.0273972602739726
+2001-09-25,1,matthew.lenhart@enron.com,Employee,6,j.kaminski@enron.com,Manager,TO,0.0
+2000-07-27,6,j.kaminski@enron.com,Manager,4,andy.zipper@enron.com,Vice President,TO,0.0273972602739726
+2001-11-14,7,mark.whitt@enron.com,Unknown,10,phillip.k.ellen@enron.com,Manager,TO,0.0136986301369863
+2002-03-26,8,chris.germany@enron.com,Employee,8,chris.germany@enron.com,Employee,TO,0.0
+2000-08-20,7,mark.whitt@enron.com,Unknown,7,mark.whitt@enron.com,Unknown,TO,0.0
+2001-04-08,9,dan.hyvl@enron.com,Employee,8,chris.germany@enron.com,Employee,TO,0.0
+2000-01-26,10,phillip.k.ellen@enron.com,Manager,7,mark.whitt@enron.com,Unknown,TO,0.0
+2000-01-26,10,phillip.k.ellen@enron.com,Manager,8,chris.germany@enron.com,Employee,TO,0.0
+2000-07-10,2,danny.mccarty@enron.com,Vice President,1,matthew.lenhart@enron.com,Employee,CC,0.0136986301369863
+2001-11-04,3,susan.scott@enron.com,Unknown,3,lindy.donoho@enron.com,Employee,CC,0.0
+2001-06-02,2,danny.mccarty@enron.com,Vice President,9,kay.mann@enron.com,Employee,CC,0.0136986301369863
+2001-11-04,3,susan.scott@enron.com,Unknown,1,matthew.lenhart@enron.com,Employee,CC,0.0
+2000-12-02,4,andy.zipper@enron.com,Vice President,3,lindy.donoho@enron.com,Employee,TO,0.0
+2000-10-14,1,matthew.lenhart@enron.com,Employee,3,susan.scott@enron.com,Unknown,TO,0.0
+2001-11-04,3,susan.scott@enron.com,Unknown,10,phillip.k.ellen@enron.com,Manager,TO,0.0
+2001-02-05,5,david.w.delainey@enron.com,CEO,10,phillip.k.ellen@enron.com,Manager,TO,0.0
+2001-11-04,3,susan.scott@enron.com,Unknown,3,susan.scott@enron.com,Unknown,TO,0.0
+2001-02-18,4,andy.zipper@enron.com,Vice President,10,phillip.k.ellen@enron.com,Manager,TO,0.0
+2000-10-23,1,matthew.lenhart@enron.com,Employee,4,andy.zipper@enron.com,Employee,TO,0.0
+2001-04-22,4,andy.zipper@enron.com,Employee,9,dan.hyvl@enron.com,Employee,TO,-0.052631578947368474
+2000-12-02,4,andy.zipper@enron.com,Vice President,1,matthew.lenhart@enron.com,Employee,CC,0.0
+2000-11-13,7,mark.whitt@enron.com,Unknown,9,dan.hyvl@enron.com,Employee,TO,0.0
+2000-10-23,1,matthew.lenhart@enron.com,Employee,2,danny.mccarty@enron.com,Vice President,TO,0.0
+1999-12-14,2,mark.e.taylor@enron.com,Employee,5,david.w.delainey@enron.com,CEO,TO,0.0136986301369863
+2002-02-04,3,susan.scott@enron.com,Unknown,4,andy.zipper@enron.com,Vice President,TO,0.0
+2000-10-23,1,matthew.lenhart@enron.com,Employee,9,dan.hyvl@enron.com,Employee,TO,0.0
+2000-12-02,4,andy.zipper@enron.com,Vice President,3,susan.scott@enron.com,Unknown,CC,0.0
+2000-05-11,1,matthew.lenhart@enron.com,Employee,2,danny.mccarty@enron.com,Vice President,TO,0.0
