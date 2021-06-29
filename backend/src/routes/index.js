@@ -80,6 +80,7 @@ let initApp = (parentApp) => {
 
 // Download request for the dataset
 router.get("/download/dataset", (req, res) => {
+    
     let reqFile = req.query.file;
     let filePath = "./src/TestFiles/" + reqFile;
 
@@ -109,7 +110,8 @@ router.get("/download/dataset", (req, res) => {
     let nodes = {};
     let edgeInfo = {};
     let edges = {};
-    let attrInfo = {max: {}, min: {}}
+    let attrInfo = {max: {}, min: {}};
+    let curId = 0;
 
     // Parse the node attributes
     let nodeAttr = Object.keys(config.nodeAttr);
@@ -144,24 +146,39 @@ router.get("/download/dataset", (req, res) => {
         attrInfo.min[columnList[attrIndex]] = 0;
     }
 
+
     // Loop over every entry
     for(var entryLine of dataLines) {
         let entry = entryLine.split(",");
+        
+        // Construct an node object
+        let from = addAttr(fromAttr, nodeAttr, entry);
+        let to = addAttr(toAttr, nodeAttr, entry);
 
-        // Id's are defined explicitely
-        let fromId = entry[config.fromId];
-        let toId = entry[config.toId];
+        let fromId, toId;
+        if(config.fromId && config.toId) {
+            // Id's are defined explicitely
+            fromId = entry[config.fromId];
+            toId = entry[config.toId];
+        } else {
+            // Need to define id's for unique nodes ourself
+            fromId = checkForDuplicate(from, nodes);
+            toId = checkForDuplicate(to, nodes);
+            if(!fromId) fromId = ++curId;
+
+            // Make sure the "to" isn't the same node as the "from"
+            let fromArr = Object.values(from);
+            let toArr = Object.values(to);
+            if(!toId && (fromArr.every( (val, i) => val === toArr[i] ))) toId = fromId;
+            else if (!toId) toId = ++curId;
+        }
 
         // date is defined explicitely
         let date = Date.parse(entry[config.date]);
 
-        // construct an node object
-        let from = addAttr(fromAttr, nodeAttr, entry);
-        let to = addAttr(toAttr, nodeAttr, entry);
-
         // TODO: it's now hardcoded but implement something to detect if there are names.
-        from["Name"] = getNameFromEmail(entry[fromAttr[0]]);
-        to["Name"] = getNameFromEmail(entry[toAttr[0]]);
+        //from["Name"] = getNameFromEmail(entry[fromAttr[0]]);
+        //to["Name"] = getNameFromEmail(entry[toAttr[0]]);
 
         // If the from/to node does not exist, add it
         if(!nodes[fromId]) nodes[fromId] = from;
@@ -171,7 +188,7 @@ router.get("/download/dataset", (req, res) => {
         // If not, create an empty placeholder for the edge
         let edgeId = `${fromId}-${toId}`;
         if(!edgeInfo[edgeId]) {
-            edgeInfo[edgeId] = { count: 0, edges: {}};
+            edgeInfo[edgeId] = { count: 0, edges: {}, fromId, toId };
             for(var idx in edgeAttrOrdinal) {
                 let attrIndex = edgeAttrOrdinal[idx];
                 let attr = columnList[attrIndex];
@@ -242,8 +259,24 @@ router.get("/download/dataset", (req, res) => {
 
     //console.log("orderings", orderings);
     // Return a 200 OK code and send the dataset to the client
-    res.status(200).json({ nodes, edgeInfo, edges, datesSorted, orderings, attrInfo}).end();
+    res.status(200).json({ nodes, edgeInfo, edges, datesSorted, orderings, attrInfo }).end();
 });
+
+// Check for duplicate node
+function checkForDuplicate(nodeAttr, nodes) {
+    for(var id in nodes) {
+        let node = nodes[id];
+
+        let dupe = true;
+        for(var key in nodeAttr) {
+            let value = nodeAttr[key];
+            let compValue = node[key];
+            if(value !== compValue) dupe = false;
+        }
+        if(dupe) return id;
+    }
+    return false;
+};
 
 // Add attributes to a node
 function addAttr(attrList, attrNames , entry) {
@@ -270,6 +303,131 @@ function getNameFromEmail(email) {
   let lastName = titleCase(nameParts[nameParts.length-1]) || "";
   return firstName + " " + lastName;
 }
+
+
+
+/*
+
+// Download request for the dataset
+router.get("/download/dataset", (req, res) => {
+
+    let reqFile = req.query.file;
+    let filePath = "./src/TestFiles/" + reqFile;
+
+    // See if the columns has been uploaded yet
+    if(!columnConfig[reqFile]) {
+        res.status(400).json({ error: "This dataset does not have a column configuration set." });
+        return res.end();
+    }
+
+    // Try to read the file data
+    let fileData;
+    try {
+        fileData = fs.readFileSync(filePath).toString();
+    } catch(e) {
+        res.status(404).json({ error: "Requested file was not found on the server." });
+        return res.end();
+    }
+
+
+    // Parse the dataset
+    let config = columnConfig[reqFile];
+
+    // Split the dataset into per-entry lines (and keep the first line as the columns list)
+    let dataLines = fileData.split("\r\n");
+    let columnList = dataLines.shift().split(",");
+    if(dataLines[dataLines.length-1] === "") dataLines.pop();
+
+    let nodes = {};
+    let edges = {};
+    let curId = 1;
+
+    // Loop over every entry
+    for(var entryLine of dataLines) {
+        let entry = entryLine.split(",");
+
+        // Node attributes
+        let fromAttr = config.fromAttr;
+        let toAttr = config.toAttr;
+
+        let fromAttrList = addAttr(fromAttr, columnList, entry);
+        let toAttrList = addAttr(toAttr, columnList, entry);
+
+        let fromId, toId;
+        if(config.fromId && config.toId) {
+            // Id's are defined explicitely
+            fromId = entry[config.fromId];
+            toId = entry[config.toId];
+        } else {
+            // Need to define id's for unique nodes ourself
+            fromId = checkForDuplicate(fromAttrList, nodes);
+            toId = checkForDuplicate(toAttrList, nodes);
+            if(!fromId) fromId = curId++;
+
+            // Make sure the "to" isn't the same node as the "from"
+            let fromArr = Object.values(fromAttrList);
+            let toArr = Object.values(toAttrList);
+            if(!toId && (fromArr.every( (val, i) => val === toArr[i] ))) toId = fromId;
+            else if (!toId) toId = curId++;
+        }
+
+        // Parse the node attributes and construct an object
+        let from = { id: fromId, ...fromAttrList };
+        let to = { id: toId, ...toAttrList };
+
+        // If the from/to node does not exist, add it
+        if(!nodes[from.id]) nodes[from.id] = from;
+        if(!nodes[to.id]) nodes[to.id] = to;
+
+        // Look if the edge has appeared before
+        // If not, create an empty placeholder for the edge
+        let edgeId = `${fromId}-${toId}`;
+        if(!edges[edgeId]) {
+            edges[edgeId] = { count: 0 };
+            for(var idx in config.edgeAttr) {
+                let attrIndex = config.edgeAttr[idx];
+                let attr = columnList[attrIndex];
+                edges[edgeId][attr] = [];
+            }
+        }
+
+        // Add the attributes to the edge object
+        edges[edgeId].count++;
+        for(var idx in config.edgeAttr) {
+            let attrIndex = config.edgeAttr[idx];
+            let attr = columnList[attrIndex];
+            let value = entry[attrIndex];
+            edges[edgeId][attr].push(value);
+        }
+
+    }
+
+    // Create an incremental ordering for the nodes
+    let orderings = { incremental: [null] };
+    for(var i = 1; i < Object.keys(nodes).length; i++) {
+        orderings.incremental.push(i);
+    }
+
+    // Return a 200 OK code and send the dataset to the client
+    res.status(200).json({ nodes, edges, orderings }).end();
+});
+
+function checkForDuplicate(nodeAttr, nodes) {
+    for(var id in nodes) {
+        let node = nodes[id];
+
+        let dupe = true;
+        for(var key in nodeAttr) {
+            let value = nodeAttr[key];
+            let compValue = node[key];
+            if(value !== compValue) dupe = false;
+        }
+        if(dupe) return id;
+    }
+    return false;
+};
+
+*/
 
 
 
