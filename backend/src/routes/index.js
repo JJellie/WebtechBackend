@@ -112,10 +112,12 @@ router.get("/download/dataset", (req, res) => {
 
     let nodes = {};
     let edgeInfo = {};
+    let edgeInfoUndirected = {};
     let edges = {};
     let attrInfo = {max: {}, min: {}};
     let maxCount = 0;
     let curId = 0;
+
 
     // Parse the node attributes
     let nodeAttr = Object.keys(config.nodeAttr);
@@ -230,22 +232,35 @@ router.get("/download/dataset", (req, res) => {
         // Look if the edgeId has appeared before
         // If not, create an empty placeholder for the edge
         let edgeId = `${fromId}-${toId}`;
+        let edgeIdReverse = `${toId}-${fromId}`;
         if(!edgeInfo[edgeId]) {
             edgeInfo[edgeId] = { count: 0, edges: {}, fromId, toId };
+            if(!edgeInfoUndirected[edgeIdReverse]) {
+              edgeInfoUndirected[edgeId] = { count: 0, edges: {}, fromId, toId };
+              edgeInfoUndirected[edgeIdReverse] = { count: 0, edges: {}, fromId, toId };
+            }
             for(var idx in edgeAttrOrdinal) {
                 let attrIndex = edgeAttrOrdinal[idx];
                 let attr = columnList[attrIndex];
                 edgeInfo[edgeId][attr] = 0;
+                if(!edgeInfoUndirected[edgeIdReverse]) {
+                  edgeInfoUndirected[edgeId][attr] = 0;
+                  edgeInfoUndirected[edgeIdReverse][attr] = 0;
+                }
             }
         }
 
         // Add the values of attributes to the existing value so after the loop it becomes the total sum of values
         edgeInfo[edgeId].count++;
+        edgeInfoUndirected[edgeId].count++
+        edgeInfoUndirected[edgeIdReverse].count++
         for(var idx in edgeAttrOrdinal) {
             let attrIndex = edgeAttrOrdinal[idx];
             let attr = columnList[attrIndex];
             let value = parseFloat(entry[attrIndex]);
             edgeInfo[edgeId][attr] = edgeInfo[edgeId][attr] + value;
+            edgeInfoUndirected[edgeId][attr] = edgeInfoUndirected[edgeId][attr] + value;
+            edgeInfoUndirected[edgeIdReverse][attr] = edgeInfoUndirected[edgeIdReverse][attr] + value;
             // Update min/max in attrInfo
             if(value > attrInfo.max[attr]) attrInfo.max[attr] = value;
             else if(value < attrInfo.min[attr]) attrInfo.min[attr] = value;
@@ -254,6 +269,10 @@ router.get("/download/dataset", (req, res) => {
         // Add edge placeholder to edgeInfo if it doesn't exist yet
         if(!edgeInfo[edgeId]["edges"][date]) {
           edgeInfo[edgeId]["edges"][date] = [];
+          if(!edgeInfoUndirected[edgeId]["edges"][date]){
+            edgeInfoUndirected[edgeId]["edges"][date] = [];
+            edgeInfoUndirected[edgeIdReverse]["edges"][date] = [];
+          }
         }
         
         // construct an edge object
@@ -261,6 +280,8 @@ router.get("/download/dataset", (req, res) => {
 
         // Add edge with attributes
         edgeInfo[edgeId]["edges"][date].push(edge);
+        edgeInfoUndirected[edgeId]["edges"][date].push(edge);
+        edgeInfoUndirected[edgeIdReverse]["edges"][date].push(edge);
 
         // Add date placeholder to edges if it doesn't exist yet
         if(!edges[date]) {
@@ -283,10 +304,13 @@ router.get("/download/dataset", (req, res) => {
  
     }
     // Average all edgeId attributes
-    for(var edgeId of Object.keys(edgeInfo)) {
+    for(var edgeId of Object.keys(edgeInfoUndirected)) {
       for(var attrIndex of edgeAttrOrdinal) {
         let attr = columnList[attrIndex];
-        edgeInfo[edgeId][attr] = edgeInfo[edgeId][attr]/edgeInfo[edgeId].count;
+        if(edgeInfo[edgeId]){
+          edgeInfo[edgeId][attr] = edgeInfo[edgeId][attr]/edgeInfo[edgeId].count;
+        }
+        edgeInfoUndirected[edgeId][attr] = edgeInfoUndirected[edgeId][attr]/edgeInfoUndirected[edgeId].count;
       }
     }
 
@@ -317,7 +341,7 @@ router.get("/download/dataset", (req, res) => {
 
     //console.log("orderings", orderings);
     // Return a 200 OK code and send the dataset to the client
-    res.status(200).json({ nodes, edgeInfo, edges, datesSorted, orderings, attrInfo }).end();
+    res.status(200).json({ nodes, edgeInfo, edgeInfoUndirected, edges, datesSorted, orderings, attrInfo }).end();
 });
 
 // Check for duplicate node
