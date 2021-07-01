@@ -130,7 +130,6 @@ router.get("/download/dataset", (req, res) => {
         nodeAttrCategoricalDifferentValues[Attr] = 0;
       }
     }
-
     let fromAttr = nodeAttr.map((attr) => config.nodeAttr[attr][0]);
     let toAttr = nodeAttr.map((attr) => config.nodeAttr[attr][1]);
 
@@ -180,7 +179,7 @@ router.get("/download/dataset", (req, res) => {
         
         if(!nodes[fromId]) {
           nodes[fromId] = from;
-          for(let Attr of Object.keys(from)) {
+          for(let Attr of Object.keys(nodeAttrCategorical)) {
             if(!nodeAttrCategoricalLocation[Attr][from[Attr]]) {
               nodeAttrCategorical[Attr].push({Attr: from[Attr], count: 1});
               nodeAttrCategoricalLocation[Attr][from[Attr]] = nodeAttrCategorical[Attr].length-1;
@@ -192,7 +191,7 @@ router.get("/download/dataset", (req, res) => {
         }
         if(!nodes[toId]) {
           nodes[toId] = to;
-          for(let Attr of Object.keys(to)) {
+          for(let Attr of Object.keys(nodeAttrCategorical)) {
             if(!nodeAttrCategoricalLocation[Attr][to[Attr]]) {
               nodeAttrCategorical[Attr].push({Attr: to[Attr], count: 1});
               nodeAttrCategoricalLocation[Attr][to[Attr]] = nodeAttrCategorical[Attr].length-1;
@@ -272,10 +271,8 @@ router.get("/download/dataset", (req, res) => {
     let datesSorted = Object.keys(edges).sort((a,b) => a-b);
 
     // Create an incremental ordering for the nodes
-    let orderings = { incremental: [] };
-    for(var i = 1; i <= Object.keys(nodes).length; i++) {
-        orderings.incremental.push(i);
-    }
+    let orderings = { incremental: [...Object.keys(nodes)].sort((a,b) => a-b)};
+  
 
 
     for(Attr of Object.keys(nodeAttrCategorical)) {
