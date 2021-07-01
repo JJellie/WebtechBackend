@@ -101,11 +101,15 @@ router.get("/download/dataset", (req, res) => {
     // Parse the dataset
     let config = columnConfig[reqFile];
 
+
+    
     // Split the dataset into per-entry lines (and keep the first line as the columns list)
     let dataLines = fileData.split("\r\n");
     let columnList = dataLines.shift().split(",");
     if(dataLines[dataLines.length-1] === "") dataLines.pop();
-    
+    // example row
+    let exampleRow = dataLines[0].split(",");
+
     let nodes = {};
     let edgeInfo = {};
     let edges = {};
@@ -143,8 +147,7 @@ router.get("/download/dataset", (req, res) => {
                 !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
     }
 
-    // example row
-    let exampleRow = dataLines[0].split(",");
+   
 
     // split edgeAttr to two arrays with ordinal and categorical attributes
     let edgeAttrCategorical = [];
