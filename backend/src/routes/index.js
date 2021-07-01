@@ -121,7 +121,6 @@ router.get("/download/dataset", (req, res) => {
     let nodeAttrCategoricalLocation = {};
     let nodeAttrCategoricalDifferentValues = {};
     let nodeAttrOrdinal = [];
-    let exampleRow = dataLines[0].split(",");
     for(var Attr of nodeAttr) {
       if(isNumeric(exampleRow[config.nodeAttr[Attr][0]])) {
         nodeAttrOrdinal.push(Attr);
@@ -144,10 +143,13 @@ router.get("/download/dataset", (req, res) => {
                 !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
     }
 
+    // example row
+    let exampleRow = dataLines[0].split(",");
+
     // split edgeAttr to two arrays with ordinal and categorical attributes
     let edgeAttrCategorical = [];
     let edgeAttrOrdinal = [];
-    let exampleRow = dataLines[0].split(",");
+    
     for(var Attr of config.edgeAttr) {
       if(isNumeric(exampleRow[Attr])) {
         edgeAttrOrdinal.push(Attr);
