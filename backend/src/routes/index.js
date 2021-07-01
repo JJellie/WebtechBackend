@@ -80,7 +80,6 @@ let initApp = (parentApp) => {
 
 // Download request for the dataset
 router.get("/download/dataset", (req, res) => {
-    
     let reqFile = req.query.file;
     let filePath = "./src/TestFiles/" + reqFile;
 
@@ -111,10 +110,27 @@ router.get("/download/dataset", (req, res) => {
     let edgeInfo = {};
     let edges = {};
     let attrInfo = {max: {}, min: {}};
+    let maxCount = 0;
     let curId = 0;
 
     // Parse the node attributes
     let nodeAttr = Object.keys(config.nodeAttr);
+
+    // split nodeAttr to two arrays with ordinal and categorical attributes
+    let nodeAttrCategorical = {};
+    let nodeAttrCategoricalLocation = {};
+    let nodeAttrCategoricalDifferentValues = {};
+    let nodeAttrOrdinal = [];
+    let exampleRow = dataLines[0].split(",");
+    for(var Attr of nodeAttr) {
+      if(isNumeric(exampleRow[config.nodeAttr[Attr][0]])) {
+        nodeAttrOrdinal.push(Attr);
+      } else {
+        nodeAttrCategorical[Attr] = [];
+        nodeAttrCategoricalLocation[Attr] = {};
+        nodeAttrCategoricalDifferentValues[Attr] = 0;
+      }
+    }
 
     let fromAttr = nodeAttr.map((attr) => config.nodeAttr[attr][0]);
     let toAttr = nodeAttr.map((attr) => config.nodeAttr[attr][1]);
@@ -181,8 +197,30 @@ router.get("/download/dataset", (req, res) => {
         //to["Name"] = getNameFromEmail(entry[toAttr[0]]);
 
         // If the from/to node does not exist, add it
-        if(!nodes[fromId]) nodes[fromId] = from;
-        if(!nodes[toId]) nodes[toId] = to;
+        if(!nodes[fromId]) {
+          nodes[fromId] = from;
+          for(let Attr of Object.keys(nodeAttrCategorical)) {
+            if(!nodeAttrCategoricalLocation[Attr][from[Attr]]) {
+              nodeAttrCategorical[Attr].push({Attr: from[Attr], count: 1});
+              nodeAttrCategoricalLocation[Attr][from[Attr]] = nodeAttrCategorical[Attr].length-1;
+              nodeAttrCategoricalDifferentValues[Attr]++;
+            } else {
+              nodeAttrCategorical[Attr][nodeAttrCategoricalLocation[Attr][from[Attr]]].count++;
+            }
+          }
+        }
+        if(!nodes[toId]) {
+          nodes[toId] = to;
+          for(let Attr of Object.keys(nodeAttrCategorical)) {
+            if(!nodeAttrCategoricalLocation[Attr][to[Attr]]) {
+              nodeAttrCategorical[Attr].push({Attr: to[Attr], count: 1});
+              nodeAttrCategoricalLocation[Attr][to[Attr]] = nodeAttrCategorical[Attr].length-1;
+              nodeAttrCategoricalDifferentValues[Attr]++;
+            } else {
+              nodeAttrCategorical[Attr][nodeAttrCategoricalLocation[Attr][to[Attr]]].count++;
+            }
+          }
+        }
 
         // Look if the edgeId has appeared before
         // If not, create an empty placeholder for the edge
@@ -233,6 +271,11 @@ router.get("/download/dataset", (req, res) => {
         edges[date]["edges"][edgeId].push(edge);
         edges[date].count++
 
+        //check if this is the maxCount
+        if(edges[date].count > maxCount) {
+          maxCount = edges[date].count;
+        }
+ 
     }
     // Average all edgeId attributes
     for(var edgeId of Object.keys(edgeInfo)) {
@@ -243,18 +286,28 @@ router.get("/download/dataset", (req, res) => {
     }
 
     // Create sortedArray of dates.
-    let datesSorted = Object.keys(edges).sort((a,b) => b-a);
+    let datesSorted = Object.keys(edges).sort((a,b) => a-b);
 
     // Create an incremental ordering for the nodes
-    let orderings = { incremental: [] };
-    for(var i = 1; i <= Object.keys(nodes).length; i++) {
-        orderings.incremental.push(i);
+    let orderings = { incremental: [...Object.keys(nodes)].sort((a,b) => a-b)};
+
+    // sort attributes in nodeAttrCategorical
+    for(Attr of Object.keys(nodeAttrCategorical)) {
+      nodeAttrCategorical[Attr] = nodeAttrCategorical[Attr].sort((a,b) => b.count-a.count);
+    }
+
+    let nodeAttrUnique = [];
+    // Find unique node attributes
+    for(Attr of Object.keys(nodeAttrCategoricalDifferentValues)) {
+      if(nodeAttrCategoricalDifferentValues[Attr] === Object.keys(nodes).length) {
+        nodeAttrUnique.push(Attr);
+      }
     }
 
     // Create attribute info object
     edgeAttrOrdinalNames = edgeAttrOrdinal.map((attr) => columnList[attr]);
     edgeAttrCategoricalNames = edgeAttrCategorical.map((attr) => columnList[attr]);
-    attrInfo = { ...attrInfo, nodeAttr : nodeAttr, edgeAttrOrdinal : edgeAttrOrdinalNames, edgeAttrCategorical : edgeAttrCategoricalNames, nodeNameDisplay : "Name", nodeColorAttr: "Jobtitle", nodeColorAttrMapping: {'CEO':0,'President':1,'Vice President':2,'Director':3,'Managing Director':4,'Manager':5,'Trader':6,'Employee':6,'In House Lawyer':6,'Unknown':6}};
+    attrInfo = { ...attrInfo, maxCount: maxCount, edgeAttrOrdinal : edgeAttrOrdinalNames, edgeAttrCategorical : edgeAttrCategoricalNames, nodeNameDisplay : "Name", nodeAttrCategorical : nodeAttrCategorical, nodeAttrOrdinal : nodeAttrOrdinal, nodeAttrUnique : nodeAttrUnique, nodeAttr : nodeAttr};
 
 
     //console.log("orderings", orderings);
