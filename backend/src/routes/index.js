@@ -178,6 +178,11 @@ router.get("/download/dataset", (req, res) => {
         let from = addAttr(fromAttr, nodeAttr, entry);
         let to = addAttr(toAttr, nodeAttr, entry);
 
+        for(let attr of nodeAttrOrdinal) {
+          from[columnList[attr]] = parseFloat(from[columnList[attr]]);
+          to[columnList[attr]] = parseFloat(to[columnList[attr]]);
+        }
+
         let fromId, toId;
         if(config.fromId && config.toId) {
             // Id's are defined explicitely
@@ -238,15 +243,17 @@ router.get("/download/dataset", (req, res) => {
             if(!edgeInfoUndirected[edgeIdReverse]) {
               edgeInfoUndirected[edgeId] = { count: 0, edges: {}, fromId, toId };
               edgeInfoUndirected[edgeIdReverse] = { count: 0, edges: {}, fromId, toId };
+              for(var idx in edgeAttrOrdinal) {
+                let attrIndex = edgeAttrOrdinal[idx];
+                let attr = columnList[attrIndex];
+                edgeInfoUndirected[edgeId][attr] = 0;
+                edgeInfoUndirected[edgeIdReverse][attr] = 0;
+              }
             }
             for(var idx in edgeAttrOrdinal) {
                 let attrIndex = edgeAttrOrdinal[idx];
                 let attr = columnList[attrIndex];
                 edgeInfo[edgeId][attr] = 0;
-                if(!edgeInfoUndirected[edgeIdReverse]) {
-                  edgeInfoUndirected[edgeId][attr] = 0;
-                  edgeInfoUndirected[edgeIdReverse][attr] = 0;
-                }
             }
         }
 
@@ -254,13 +261,14 @@ router.get("/download/dataset", (req, res) => {
         edgeInfo[edgeId].count++;
         edgeInfoUndirected[edgeId].count++
         edgeInfoUndirected[edgeIdReverse].count++
+        
         for(var idx in edgeAttrOrdinal) {
             let attrIndex = edgeAttrOrdinal[idx];
             let attr = columnList[attrIndex];
             let value = parseFloat(entry[attrIndex]);
-            edgeInfo[edgeId][attr] = edgeInfo[edgeId][attr] + value;
-            edgeInfoUndirected[edgeId][attr] = edgeInfoUndirected[edgeId][attr] + value;
-            edgeInfoUndirected[edgeIdReverse][attr] = edgeInfoUndirected[edgeIdReverse][attr] + value;
+            edgeInfo[edgeId][attr] += value;
+            edgeInfoUndirected[edgeId][attr] += value;
+            edgeInfoUndirected[edgeIdReverse][attr] += value;
             // Update min/max in attrInfo
             if(value > attrInfo.max[attr]) attrInfo.max[attr] = value;
             else if(value < attrInfo.min[attr]) attrInfo.min[attr] = value;
@@ -277,6 +285,12 @@ router.get("/download/dataset", (req, res) => {
         
         // construct an edge object
         let edge = addAttr(config.edgeAttr, edgeAttr, entry);
+        // convert ordinal values to floats
+
+        for(let attr of edgeAttrOrdinal) {
+          edge[columnList[attr]] = parseFloat(edge[columnList[attr]]);
+        }
+
 
         // Add edge with attributes
         edgeInfo[edgeId]["edges"][date].push(edge);
